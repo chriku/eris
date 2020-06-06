@@ -74,7 +74,7 @@ typedef struct LG {
 
 
 
-#define fromstate(L)	(cast(LX *, cast(lu_byte *, (L)) - offsetof(LX, l)))
+#define fromstate(L)	(cast(LX *, cast(void*,cast(lu_byte *, cast(void*,cast(char*,cast(void*,(L))))) - offsetof(LX, l))))
 
 
 /*
@@ -86,14 +86,14 @@ typedef struct LG {
   { size_t t = cast(size_t, e); \
     memcpy(buff + p, &t, sizeof(t)); p += sizeof(t); }
 
-static unsigned int makeseed (lua_State *L) {
+consteval unsigned int makeseed (lua_State *L) {
   char buff[4 * sizeof(size_t)];
-  unsigned int h = luai_makeseed();
+  unsigned int h = 0;//luai_makeseed();
   int p = 0;
-  addbuff(buff, p, L);  /* heap variable */
-  addbuff(buff, p, &h);  /* local variable */
-  addbuff(buff, p, luaO_nilobject);  /* global variable */
-  addbuff(buff, p, &lua_newstate);  /* public function */
+  //addbuff(buff, p, L);  /* heap variable */
+  //addbuff(buff, p, &h);  /* local variable */
+  //addbuff(buff, p, luaO_nilobject);  /* global variable */
+  //addbuff(buff, p, &lua_newstate);  /* public function */
   lua_assert(p == sizeof(buff));
   return luaS_hash(buff, p, h);
 }
@@ -103,13 +103,13 @@ static unsigned int makeseed (lua_State *L) {
 ** set GCdebt to a new value keeping the value (totalbytes + GCdebt)
 ** invariant
 */
-void luaE_setdebt (global_State *g, l_mem debt) {
+consteval void luaE_setdebt (global_State *g, l_mem debt) {
   g->totalbytes -= (debt - g->GCdebt);
   g->GCdebt = debt;
 }
 
 
-CallInfo *luaE_extendCI (lua_State *L) {
+consteval CallInfo *luaE_extendCI (lua_State *L) {
   CallInfo *ci = luaM_new(L, CallInfo);
   lua_assert(L->ci->next == NULL);
   L->ci->next = ci;
@@ -119,7 +119,7 @@ CallInfo *luaE_extendCI (lua_State *L) {
 }
 
 
-void luaE_freeCI (lua_State *L) {
+consteval void luaE_freeCI (lua_State *L) {
   CallInfo *ci = L->ci;
   CallInfo *next = ci->next;
   ci->next = NULL;
@@ -130,7 +130,7 @@ void luaE_freeCI (lua_State *L) {
 }
 
 
-static void stack_init (lua_State *L1, lua_State *L) {
+consteval void stack_init (lua_State *L1, lua_State *L) {
   int i; CallInfo *ci;
   /* initialize stack array */
   L1->stack = luaM_newvector(L, BASIC_STACK_SIZE, TValue);
@@ -150,7 +150,7 @@ static void stack_init (lua_State *L1, lua_State *L) {
 }
 
 
-static void freestack (lua_State *L) {
+consteval void freestack (lua_State *L) {
   if (L->stack == NULL)
     return;  /* stack not completely built yet */
   L->ci = &L->base_ci;  /* free the entire 'ci' list */
@@ -162,7 +162,7 @@ static void freestack (lua_State *L) {
 /*
 ** Create registry table and its predefined values
 */
-static void init_registry (lua_State *L, global_State *g) {
+consteval void init_registry (lua_State *L, global_State *g) {
   TValue mt;
   /* create registry */
   Table *registry = luaH_new(L);
@@ -180,7 +180,7 @@ static void init_registry (lua_State *L, global_State *g) {
 /*
 ** open parts of the state that may cause memory-allocation errors
 */
-static void f_luaopen (lua_State *L, void *ud) {
+consteval void f_luaopen (lua_State *L, void *ud) {
   global_State *g = G(L);
   UNUSED(ud);
   stack_init(L, L);  /* init stack */
@@ -201,7 +201,7 @@ static void f_luaopen (lua_State *L, void *ud) {
 ** preinitialize a state with consistent values without allocating
 ** any memory (to avoid errors)
 */
-static void preinit_state (lua_State *L, global_State *g) {
+consteval void preinit_state (lua_State *L, global_State *g) {
   G(L) = g;
   L->stack = NULL;
   L->ci = NULL;
@@ -220,7 +220,7 @@ static void preinit_state (lua_State *L, global_State *g) {
 }
 
 
-static void close_state (lua_State *L) {
+consteval void close_state (lua_State *L) {
   global_State *g = G(L);
   luaF_close(L, L->stack);  /* close all upvalues for this thread */
   luaC_freeallobjects(L);  /* collect all objects */
@@ -253,7 +253,7 @@ LUA_API lua_State *lua_newthread (lua_State *L) {
 }
 
 
-void luaE_freethread (lua_State *L, lua_State *L1) {
+consteval void luaE_freethread (lua_State *L, lua_State *L1) {
   LX *l = fromstate(L1);
   luaF_close(L1, L1->stack);  /* close all upvalues for this thread */
   lua_assert(L1->openupval == NULL);
@@ -267,7 +267,7 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   int i;
   lua_State *L;
   global_State *g;
-  LG *l = cast(LG *, (*f)(ud, NULL, LUA_TTHREAD, sizeof(LG)));
+  LG *l = static_cast<LG *>( (*f)(ud, NULL, LUA_TTHREAD, sizeof(LG)));
   if (l == NULL) return NULL;
   L = &l->l.l;
   g = &l->g;

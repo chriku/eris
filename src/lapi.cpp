@@ -35,7 +35,7 @@ const char lua_ident[] =
 
 
 /* value at a non-valid index */
-#define NONVALIDVALUE		cast(TValue *, luaO_nilobject)
+#define NONVALIDVALUE		const_cast<TValue*>(luaO_nilobject)
 
 /* corresponding test */
 #define isvalid(o)	((o) != luaO_nilobject)
@@ -52,7 +52,7 @@ const char lua_ident[] =
 	api_check(L, isstackindex(i, o), "index not in the stack")
 
 
-static TValue *index2addr (lua_State *L, int idx) {
+consteval TValue *index2addr (lua_State *L, int idx) {
   CallInfo *ci = L->ci;
   if (idx > 0) {
     TValue *o = ci->func + idx;
@@ -83,7 +83,7 @@ static TValue *index2addr (lua_State *L, int idx) {
 ** to be called by 'lua_checkstack' in protected mode, to grow stack
 ** capturing memory errors
 */
-static void growstack (lua_State *L, void *ud) {
+consteval void growstack (lua_State *L, void *ud) {
   int size = *(int *)ud;
   luaD_growstack(L, size);
 }
@@ -133,9 +133,9 @@ LUA_API lua_CFunction lua_atpanic (lua_State *L, lua_CFunction panicf) {
   return old;
 }
 
+constexpr const lua_Number version = LUA_VERSION_NUM;
 
 LUA_API const lua_Number *lua_version (lua_State *L) {
-  static const lua_Number version = LUA_VERSION_NUM;
   if (L == NULL) return &version;
   else return G(L)->version;
 }
@@ -203,7 +203,7 @@ LUA_API void lua_insert (lua_State *L, int idx) {
 }
 
 
-static void moveto (lua_State *L, TValue *fr, int idx) {
+consteval void moveto (lua_State *L, TValue *fr, int idx) {
   TValue *to = index2addr(L, idx);
   api_checkvalidindex(L, to);
   setobj(L, to, fr);
@@ -440,20 +440,20 @@ LUA_API lua_State *lua_tothread (lua_State *L, int idx) {
 }
 
 
-LUA_API const void *lua_topointer (lua_State *L, int idx) {
+/*LUA_API const void *lua_topointer (lua_State *L, int idx) {
   StkId o = index2addr(L, idx);
   switch (ttype(o)) {
     case LUA_TTABLE: return hvalue(o);
     case LUA_TLCL: return clLvalue(o);
     case LUA_TCCL: return clCvalue(o);
-    case LUA_TLCF: return cast(void *, cast(size_t, fvalue(o)));
+    case LUA_TLCF: return cast(void *, fvalue(o));
     case LUA_TTHREAD: return thvalue(o);
     case LUA_TUSERDATA:
     case LUA_TLIGHTUSERDATA:
       return lua_touserdata(L, idx);
     default: return NULL;
   }
-}
+}*/
 
 
 
@@ -539,7 +539,7 @@ LUA_API const char *lua_pushvfstring (lua_State *L, const char *fmt,
 }
 
 
-LUA_API const char *lua_pushfstring (lua_State *L, const char *fmt, ...) {
+/*LUA_API const char *lua_pushfstring (lua_State *L, const char *fmt, ...) {
   const char *ret;
   va_list argp;
   lua_lock(L);
@@ -549,7 +549,7 @@ LUA_API const char *lua_pushfstring (lua_State *L, const char *fmt, ...) {
   va_end(argp);
   lua_unlock(L);
   return ret;
-}
+}*/
 
 
 LUA_API void lua_pushcclosure (lua_State *L, lua_CFunction fn, int n) {
@@ -663,7 +663,7 @@ LUA_API void lua_rawgetp (lua_State *L, int idx, const void *p) {
   lua_lock(L);
   t = index2addr(L, idx);
   api_check(L, ttistable(t), "table expected");
-  setpvalue(&k, cast(void *, p));
+  setpvalue(&k, const_cast<void*>(cast(const void *, p)));
   setobj2s(L, L->top, luaH_get(hvalue(t), &k));
   api_incr_top(L);
   lua_unlock(L);
@@ -801,7 +801,7 @@ LUA_API void lua_rawsetp (lua_State *L, int idx, const void *p) {
   api_checknelems(L, 1);
   t = index2addr(L, idx);
   api_check(L, ttistable(t), "table expected");
-  setpvalue(&k, cast(void *, p));
+  setpvalue(&k, const_cast<void*>(cast(const void *, p)));
   setobj2t(L, luaH_set(L, hvalue(t), &k), L->top - 1);
   luaC_barrierback(L, gcvalue(t), L->top - 1);
   L->top--;
@@ -918,56 +918,11 @@ struct CallS {  /* data to `f_call' */
 };
 
 
-static void f_call (lua_State *L, void *ud) {
+consteval void f_call (lua_State *L, void *ud) {
   struct CallS *c = cast(struct CallS *, ud);
   luaD_call(L, c->func, c->nresults, 0);
 }
 
-
-
-LUA_API int lua_pcallk (lua_State *L, int nargs, int nresults, int errfunc,
-                        int ctx, lua_CFunction k) {
-  struct CallS c;
-  int status;
-  ptrdiff_t func;
-  lua_lock(L);
-  api_check(L, k == NULL || !isLua(L->ci),
-    "cannot use continuations inside hooks");
-  api_checknelems(L, nargs+1);
-  api_check(L, L->status == LUA_OK, "cannot do calls on non-normal thread");
-  checkresults(L, nargs, nresults);
-  if (errfunc == 0)
-    func = 0;
-  else {
-    StkId o = index2addr(L, errfunc);
-    api_checkstackindex(L, errfunc, o);
-    func = savestack(L, o);
-  }
-  c.func = L->top - (nargs+1);  /* function to be called */
-  if (k == NULL || L->nny > 0) {  /* no continuation or no yieldable? */
-    c.nresults = nresults;  /* do a 'conventional' protected call */
-    status = luaD_pcall(L, f_call, &c, savestack(L, c.func), func);
-  }
-  else {  /* prepare continuation (call is already protected by 'resume') */
-    CallInfo *ci = L->ci;
-    ci->u.c.k = k;  /* save continuation */
-    ci->u.c.ctx = ctx;  /* save context */
-    /* save information for error recovery */
-    ci->extra = savestack(L, c.func);
-    ci->u.c.old_allowhook = L->allowhook;
-    ci->u.c.old_errfunc = L->errfunc;
-    L->errfunc = func;
-    /* mark that function may do error recovery */
-    ci->callstatus |= CIST_YPCALL;
-    luaD_call(L, c.func, nresults, 1);  /* do the call */
-    ci->callstatus &= ~CIST_YPCALL;
-    L->errfunc = ci->u.c.old_errfunc;
-    status = LUA_OK;  /* if it is here, there were no errors */
-  }
-  adjustresults(L, nresults);
-  lua_unlock(L);
-  return status;
-}
 
 
 LUA_API int lua_load (lua_State *L, lua_Reader reader, void *data,
@@ -1185,7 +1140,7 @@ LUA_API void *lua_newuserdata (lua_State *L, size_t size) {
 
 
 
-static const char *aux_upvalue (StkId fi, int n, TValue **val,
+consteval const char *aux_upvalue (StkId fi, int n, TValue **val,
                                 GCObject **owner) {
   switch (ttype(fi)) {
     case LUA_TCCL: {  /* C closure */
@@ -1243,7 +1198,7 @@ LUA_API const char *lua_setupvalue (lua_State *L, int funcindex, int n) {
 }
 
 
-static UpVal **getupvalref (lua_State *L, int fidx, int n, LClosure **pf) {
+consteval UpVal **getupvalref (lua_State *L, int fidx, int n, LClosure **pf) {
   LClosure *f;
   StkId fi = index2addr(L, fidx);
   api_check(L, ttisLclosure(fi), "Lua function expected");

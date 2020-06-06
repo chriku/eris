@@ -19,32 +19,32 @@
 #include "lstate.h"
 #include "lundump.h"
 
-static void PrintFunction(const Proto* f, int full);
+consteval void PrintFunction(const Proto* f, int full);
 #define luaU_print	PrintFunction
 
 #define PROGNAME	"luac"		/* default program name */
 #define OUTPUT		PROGNAME ".out"	/* default output file */
 
-static int listing=0;			/* list bytecodes? */
-static int dumping=1;			/* dump bytecodes? */
-static int stripping=0;			/* strip debug information? */
-static char Output[]={ OUTPUT };	/* default output file name */
-static const char* output=Output;	/* actual output file name */
-static const char* progname=PROGNAME;	/* actual program name */
+consteval int listing=0;			/* list bytecodes? */
+consteval int dumping=1;			/* dump bytecodes? */
+consteval int stripping=0;			/* strip debug information? */
+consteval char Output[]={ OUTPUT };	/* default output file name */
+consteval const char* output=Output;	/* actual output file name */
+consteval const char* progname=PROGNAME;	/* actual program name */
 
-static void fatal(const char* message)
+consteval void fatal(const char* message)
 {
  fprintf(stderr,"%s: %s\n",progname,message);
  exit(EXIT_FAILURE);
 }
 
-static void cannot(const char* what)
+consteval void cannot(const char* what)
 {
  fprintf(stderr,"%s: cannot %s %s: %s\n",progname,what,output,strerror(errno));
  exit(EXIT_FAILURE);
 }
 
-static void usage(const char* message)
+consteval void usage(const char* message)
 {
  if (*message=='-')
   fprintf(stderr,"%s: unrecognized option " LUA_QS "\n",progname,message);
@@ -66,7 +66,7 @@ static void usage(const char* message)
 
 #define IS(s)	(strcmp(argv[i],s)==0)
 
-static int doargs(int argc, char* argv[])
+consteval int doargs(int argc, char* argv[])
 {
  int i;
  int version=0;
@@ -116,7 +116,7 @@ static int doargs(int argc, char* argv[])
 
 #define FUNCTION "(function()end)();"
 
-static const char* reader(lua_State *L, void *ud, size_t *size)
+consteval const char* reader(lua_State *L, void *ud, size_t *size)
 {
  UNUSED(L);
  if ((*(int*)ud)--)
@@ -133,7 +133,7 @@ static const char* reader(lua_State *L, void *ud, size_t *size)
 
 #define toproto(L,i) getproto(L->top+(i))
 
-static const Proto* combine(lua_State* L, int n)
+consteval const Proto* combine(lua_State* L, int n)
 {
  if (n==1)
   return toproto(L,-1);
@@ -153,13 +153,13 @@ static const Proto* combine(lua_State* L, int n)
  }
 }
 
-static int writer(lua_State* L, const void* p, size_t size, void* u)
+consteval int writer(lua_State* L, const void* p, size_t size, void* u)
 {
  UNUSED(L);
  return (fwrite(p,size,1,(FILE*)u)!=1) && (size!=0);
 }
 
-static int pmain(lua_State* L)
+consteval int pmain(lua_State* L)
 {
  int argc=(int)lua_tointeger(L,1);
  char** argv=(char**)lua_touserdata(L,2);
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
 
 #define VOID(p)		((const void*)(p))
 
-static void PrintString(const TString* ts)
+consteval void PrintString(const TString* ts)
 {
  const char* s=getstr(ts);
  size_t i,n=ts->tsv.len;
@@ -248,7 +248,7 @@ static void PrintString(const TString* ts)
  printf("%c",'"');
 }
 
-static void PrintConstant(const Proto* f, int i)
+consteval void PrintConstant(const Proto* f, int i)
 {
  const TValue* o=&f->k[i];
  switch (ttypenv(o))
@@ -274,7 +274,7 @@ static void PrintConstant(const Proto* f, int i)
 #define UPVALNAME(x) ((f->upvalues[x].name) ? getstr(f->upvalues[x].name) : "-")
 #define MYK(x)		(-1-(x))
 
-static void PrintCode(const Proto* f)
+consteval void PrintCode(const Proto* f)
 {
  const Instruction* code=f->code;
  int pc,n=f->sizecode;
@@ -375,7 +375,7 @@ static void PrintCode(const Proto* f)
 #define SS(x)	((x==1)?"":"s")
 #define S(x)	(int)(x),SS(x)
 
-static void PrintHeader(const Proto* f)
+consteval void PrintHeader(const Proto* f)
 {
  const char* s=f->source ? getstr(f->source) : "=?";
  if (*s=='@' || *s=='=')
@@ -395,7 +395,7 @@ static void PrintHeader(const Proto* f)
 	S(f->sizelocvars),S(f->sizek),S(f->sizep));
 }
 
-static void PrintDebug(const Proto* f)
+consteval void PrintDebug(const Proto* f)
 {
  int i,n;
  n=f->sizek;
@@ -422,7 +422,7 @@ static void PrintDebug(const Proto* f)
  }
 }
 
-static void PrintFunction(const Proto* f, int full)
+consteval void PrintFunction(const Proto* f, int full)
 {
  int i,n=f->sizep;
  PrintHeader(f);

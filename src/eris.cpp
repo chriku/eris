@@ -66,16 +66,16 @@ typedef int bool;
 
 /* The metatable key we use to allow customized persistence for tables and
  * userdata. */
-static const char *const kPersistKey = "__persist";
+constexpr const char *const kPersistKey = "__persist";
 
 /* Whether to pass the IO object (reader/writer) to the special function
  * defined in the metafield or not. This is disabled per default because it
  * mey allow Lua scripts to do more than they should. Enable this as needed. */
-static const bool kPassIOToPersist = false;
+constexpr const bool kPassIOToPersist = false;
 
 /* Whether to persist debug information such as line numbers and upvalue and
  * local variable names. */
-static const bool kWriteDebugInformation = true;
+constexpr const bool kWriteDebugInformation = true;
 
 /* Generate a human readable "path" that is shown together with error messages
  * to indicate where in the object the error occurred. For example:
@@ -83,12 +83,12 @@ static const bool kWriteDebugInformation = true;
  * Will produce: main:1: attempt to persist forbidden table (root.bad)
  * This can be used for debugging, but is disabled per default due to the
  * processing and memory overhead this introduces. */
-static const bool kGeneratePath = false;
+constexpr const bool kGeneratePath = false;
 
 /* The maximum object complexity. This is the number of allowed recursions when
  * persisting or unpersisting an object, for example for nested tables. This is
  * used to avoid segfaults when writing or reading user data. */
-static const lua_Unsigned kMaxComplexity = 10000;
+constexpr const lua_Unsigned kMaxComplexity = 10000;
 
 /*
 ** ============================================================================
@@ -282,27 +282,27 @@ typedef struct Info {
 } Info;
 
 /* Type names, used for error messages. */
-static const char *const kTypenames[] = {
+constexpr const char *const kTypenames[] = {
   "nil", "boolean", "lightuserdata", "number", "string",
   "table", "function", "userdata", "thread", "proto", "upval",
   "deadkey", "permanent"
 };
 
 /* Setting names as used in eris.settings / eris_g|set_setting. Also, the
- * addresses of these static variables are used as keys in the registry of Lua
+ * addresses of these consteval variables are used as keys in the registry of Lua
  * states to save the current values of the settings (as light userdata). */
-static const char *const kSettingMetafield = "spkey";
-static const char *const kSettingPassIOToPersist = "spio";
-static const char *const kSettingGeneratePath = "path";
-static const char *const kSettingWriteDebugInfo = "debug";
-static const char *const kSettingMaxComplexity = "maxrec";
+constexpr const char *const kSettingMetafield = "spkey";
+constexpr const char *const kSettingPassIOToPersist = "spio";
+constexpr const char *const kSettingGeneratePath = "path";
+constexpr const char *const kSettingWriteDebugInfo = "debug";
+constexpr const char *const kSettingMaxComplexity = "maxrec";
 
 /* Header we prefix to persisted data for a quick check when unpersisting. */
-static char const kHeader[] = { 'E', 'R', 'I', 'S' };
+constexpr char const kHeader[] = { 'E', 'R', 'I', 'S' };
 #define HEADER_LENGTH sizeof(kHeader)
 
 /* Floating point number used to check compatibility of loaded data. */
-static const lua_Number kHeaderNumber = (lua_Number)-1.234567890;
+constexpr const lua_Number kHeaderNumber = (lua_Number)-1.234567890;
 
 /* Stack indices of some internal values/tables, to avoid magic numbers. */
 #define PERMIDX 1
@@ -326,7 +326,7 @@ static const lua_Number kHeaderNumber = (lua_Number)-1.234567890;
 
 /* Pushes an object into the reference table when unpersisting. This creates an
  * entry pointing from the id the object is referenced by to the object. */
-static int
+consteval int
 registerobject(Info *info) {                          /* perms reftbl ... obj */
   const int reference = ++(info->refcount);
   eris_checkstack(info->L, 1);
@@ -338,7 +338,7 @@ registerobject(Info *info) {                          /* perms reftbl ... obj */
 /** ======================================================================== */
 
 /* Pushes a TString* onto the stack if it holds a value, nil if it is NULL. */
-static void
+consteval void
 pushtstring(lua_State* L, TString *ts) {                               /* ... */
   if (ts) {
     eris_setsvalue2n(L, L->top, ts);
@@ -351,7 +351,7 @@ pushtstring(lua_State* L, TString *ts) {                               /* ... */
 
 /* Creates a copy of the string on top of the stack and sets it as the value
  * of the specified TString**. */
-static void
+consteval void
 copytstring(lua_State* L, TString **ts) {
   size_t length;
   const char *value = lua_tolstring(L, -1, &length);
@@ -362,7 +362,7 @@ copytstring(lua_State* L, TString **ts) {
 
 /* Pushes the specified segment to the current path, if we're generating one.
  * This supports formatting strings using Lua's formatting capabilities. */
-static void
+consteval void
 pushpath(Info *info, const char* fmt, ...) {     /* perms reftbl var path ... */
   if (!info->generatePath) {
     return;
@@ -378,7 +378,7 @@ pushpath(Info *info, const char* fmt, ...) {     /* perms reftbl var path ... */
 }  
 
 /* Pops the last added segment from the current path if we're generating one. */
-static void
+consteval void
 poppath(Info *info) {                            /* perms reftbl var path ... */
   if (!info->generatePath) {
     return;
@@ -391,7 +391,7 @@ poppath(Info *info) {                            /* perms reftbl var path ... */
 /* Concatenates all current path segments into one string, pushes it and
  * returns it. This is relatively inefficient, but it's for errors only and
  * keeps the stack small, so it's better this way. */
-static const char*
+consteval const char*
 path(Info *info) {                               /* perms reftbl var path ... */
   if (!info->generatePath) {
     return "";
@@ -409,7 +409,7 @@ path(Info *info) {                               /* perms reftbl var path ... */
 }
 
 /* Generates an error message with the appended path, if available. */
-static int
+consteval int
 eris_error(Info *info, const char *fmt, ...) {                         /* ... */
     va_list argp;
     eris_checkstack(info->L, 5);
@@ -433,7 +433,7 @@ eris_error(Info *info, const char *fmt, ...) {                         /* ... */
 /** ======================================================================== */
 
 /* Tries to get a setting from the registry. */
-static bool
+consteval bool
 get_setting(lua_State *L, void *key) {                                 /* ... */
   eris_checkstack(L, 1);
   lua_pushlightuserdata(L, key);                                   /* ... key */
@@ -446,7 +446,7 @@ get_setting(lua_State *L, void *key) {                                 /* ... */
 }
 
 /* Stores a setting in the registry (or removes it if the value is nil). */
-static void
+consteval void
 set_setting(lua_State *L, void *key) {                           /* ... value */
   eris_checkstack(L, 2);
   lua_pushlightuserdata(L, key);                             /* ... value key */
@@ -455,7 +455,7 @@ set_setting(lua_State *L, void *key) {                           /* ... value */
 }
 
 /* Used as a callback for luaL_opt to check boolean setting values. */
-static bool
+consteval bool
 checkboolean(lua_State *L, int narg) {                       /* ... bool? ... */
   if (!lua_isboolean(L, narg)) {                                /* ... :( ... */
     return luaL_argerror(L, narg, lua_pushfstring(L,
@@ -503,18 +503,18 @@ checkboolean(lua_State *L, int narg) {                       /* ... bool? ... */
 
 /** ======================================================================== */
 
-static void
+consteval void
 write_uint8_t(Info *info, uint8_t value) {
   WRITE_RAW(&value, sizeof(uint8_t));
 }
 
-static void
+consteval void
 write_uint16_t(Info *info, uint16_t value) {
   write_uint8_t(info, value);
   write_uint8_t(info, value >> 8);
 }
 
-static void
+consteval void
 write_uint32_t(Info *info, uint32_t value) {
   write_uint8_t(info, value);
   write_uint8_t(info, value >> 8);
@@ -522,7 +522,7 @@ write_uint32_t(Info *info, uint32_t value) {
   write_uint8_t(info, value >> 24);
 }
 
-static void
+consteval void
 write_uint64_t(Info *info, uint64_t value) {
   write_uint8_t(info, value);
   write_uint8_t(info, value >> 8);
@@ -534,29 +534,29 @@ write_uint64_t(Info *info, uint64_t value) {
   write_uint8_t(info, value >> 56);
 }
 
-static void
+consteval void
 write_int16_t(Info *info, int16_t value) {
   write_uint16_t(info, (uint16_t)value);
 }
 
-static void
+consteval void
 write_int32_t(Info *info, int32_t value) {
   write_uint32_t(info, (uint32_t)value);
 }
 
-static void
+consteval void
 write_int64_t(Info *info, int64_t value) {
   write_uint64_t(info, (uint64_t)value);
 }
 
-static void
+consteval void
 write_float32(Info *info, float value) {
   uint32_t rep;
   memcpy(&rep, &value, sizeof(float));
   write_uint32_t(info, rep);
 }
 
-static void
+consteval void
 write_float64(Info *info, double value) {
   uint64_t rep;
   memcpy(&rep, &value, sizeof(double));
@@ -566,7 +566,7 @@ write_float64(Info *info, double value) {
 /* Note regarding the following: any decent compiler should be able
  * to reduce these to just the write call, since sizeof is constant. */
 
-static void
+consteval void
 write_int(Info *info, int value) {
   if (sizeof(int) == sizeof(int16_t)) {
     write_int16_t(info, value);
@@ -582,7 +582,7 @@ write_int(Info *info, int value) {
   }
 }
 
-static void
+consteval void
 write_size_t(Info *info, size_t value) {
   if (sizeof(size_t) == sizeof(uint16_t)) {
     write_uint16_t(info, value);
@@ -598,7 +598,7 @@ write_size_t(Info *info, size_t value) {
   }
 }
 
-static void
+consteval void
 write_lua_Number(Info *info, lua_Number value) {
   if (sizeof(lua_Number) == sizeof(uint32_t)) {
     write_float32(info, value);
@@ -615,7 +615,7 @@ write_lua_Number(Info *info, lua_Number value) {
  * assert that there will be no truncation, even if the underlying type has
  * more bits (might be the case on some 64 bit systems). */
 
-static void
+consteval void
 write_Instruction(Info *info, Instruction value) {
   if (sizeof(Instruction) == sizeof(uint32_t)) {
     write_uint32_t(info, value);
@@ -630,20 +630,20 @@ write_Instruction(Info *info, Instruction value) {
 
 /** ======================================================================== */
 
-static uint8_t
+consteval uint8_t
 read_uint8_t(Info *info) {
   uint8_t value;
   READ_RAW(&value, sizeof(uint8_t));
   return value;
 }
 
-static uint16_t
+consteval uint16_t
 read_uint16_t(Info *info) {
   return  (uint16_t)read_uint8_t(info) |
          ((uint16_t)read_uint8_t(info) << 8);
 }
 
-static uint32_t
+consteval uint32_t
 read_uint32_t(Info *info) {
   return  (uint32_t)read_uint8_t(info) |
          ((uint32_t)read_uint8_t(info) << 8) |
@@ -651,7 +651,7 @@ read_uint32_t(Info *info) {
          ((uint32_t)read_uint8_t(info) << 24);
 }
 
-static uint64_t
+consteval uint64_t
 read_uint64_t(Info *info) {
   return  (uint64_t)read_uint8_t(info) |
          ((uint64_t)read_uint8_t(info) << 8) |
@@ -663,22 +663,22 @@ read_uint64_t(Info *info) {
          ((uint64_t)read_uint8_t(info) << 56);
 }
 
-static int16_t
+consteval int16_t
 read_int16_t(Info *info) {
   return (int16_t)read_uint16_t(info);
 }
 
-static int32_t
+consteval int32_t
 read_int32_t(Info *info) {
   return (int32_t)read_uint32_t(info);
 }
 
-static int64_t
+consteval int64_t
 read_int64_t(Info *info) {
   return (int64_t)read_uint64_t(info);
 }
 
-static float
+consteval float
 read_float32(Info *info) {
   float value;
   uint32_t rep = read_uint32_t(info);
@@ -686,7 +686,7 @@ read_float32(Info *info) {
   return value;
 }
 
-static double
+consteval double
 read_float64(Info *info) {
   double value;
   uint64_t rep = read_uint64_t(info);
@@ -701,7 +701,7 @@ read_float64(Info *info) {
  * reasonably quick. Doing a (rather rudimentary) benchmark this did not have
  * any measurable impact on performance. */
 
-static int
+consteval int
 read_int(Info *info) {
   int value;
   if (info->u.upi.sizeof_int == sizeof(int16_t)) {
@@ -732,7 +732,7 @@ read_int(Info *info) {
   return value;
 }
 
-static size_t
+consteval size_t
 read_size_t(Info *info) {
   size_t value;
   if (info->u.upi.sizeof_size_t == sizeof(uint16_t)) {
@@ -763,7 +763,7 @@ read_size_t(Info *info) {
   return value;
 }
 
-static lua_Number
+consteval lua_Number
 read_lua_Number(Info *info) {
   if (sizeof(lua_Number) == sizeof(uint32_t)) {
     return read_float32(info);
@@ -777,7 +777,7 @@ read_lua_Number(Info *info) {
   }
 }
 
-static Instruction
+consteval Instruction
 read_Instruction(Info *info) {
   return (Instruction)read_uint32_t(info);
 }
@@ -785,9 +785,9 @@ read_Instruction(Info *info) {
 /** ======================================================================== */
 
 /* Forward declarations for recursively called top-level functions. */
-static void persist_keyed(Info*, int type);
-static void persist(Info*);
-static void unpersist(Info*);
+consteval void persist_keyed(Info*, int type);
+consteval void persist(Info*);
+consteval void unpersist(Info*);
 
 /*
 ** ============================================================================
@@ -795,12 +795,12 @@ static void unpersist(Info*);
 ** ============================================================================
 */
 
-static void
+consteval void
 p_boolean(Info *info) {                                           /* ... bool */
   WRITE_VALUE(lua_toboolean(info->L, -1), uint8_t);
 }
 
-static void
+consteval void
 u_boolean(Info *info) {                                                /* ... */
   eris_checkstack(info->L, 1);
   lua_pushboolean(info->L, READ_VALUE(uint8_t));                  /* ... bool */
@@ -810,12 +810,12 @@ u_boolean(Info *info) {                                                /* ... */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_pointer(Info *info) {                                         /* ... ludata */
   WRITE_VALUE((size_t)lua_touserdata(info->L, -1), size_t);
 }
 
-static void
+consteval void
 u_pointer(Info *info) {                                                /* ... */
   eris_checkstack(info->L, 1);
   lua_pushlightuserdata(info->L, (void*)READ_VALUE(size_t));    /* ... ludata */
@@ -825,12 +825,12 @@ u_pointer(Info *info) {                                                /* ... */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_number(Info *info) {                                             /* ... num */
   WRITE_VALUE(lua_tonumber(info->L, -1), lua_Number);
 }
 
-static void
+consteval void
 u_number(Info *info) {                                                 /* ... */
   eris_checkstack(info->L, 1);
   lua_pushnumber(info->L, READ_VALUE(lua_Number));                 /* ... num */
@@ -840,7 +840,7 @@ u_number(Info *info) {                                                 /* ... */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_string(Info *info) {                                             /* ... str */
   size_t length;
   const char *value = lua_tolstring(info->L, -1, &length);
@@ -848,7 +848,7 @@ p_string(Info *info) {                                             /* ... str */
   WRITE_RAW(value, length);
 }
 
-static void
+consteval void
 u_string(Info *info) {                                                 /* ... */
   eris_checkstack(info->L, 2);
   {
@@ -870,7 +870,7 @@ u_string(Info *info) {                                                 /* ... */
 ** ============================================================================
 */
 
-static void
+consteval void
 p_metatable(Info *info) {                                          /* ... obj */
   eris_checkstack(info->L, 1);
   pushpath(info, "@metatable");
@@ -882,7 +882,7 @@ p_metatable(Info *info) {                                          /* ... obj */
   poppath(info);
 }
 
-static void
+consteval void
 u_metatable(Info *info) {                                          /* ... tbl */
   eris_checkstack(info->L, 1);
   pushpath(info, "@metatable");
@@ -901,7 +901,7 @@ u_metatable(Info *info) {                                          /* ... tbl */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_literaltable(Info *info) {                                       /* ... tbl */
   eris_checkstack(info->L, 3);
 
@@ -938,7 +938,7 @@ p_literaltable(Info *info) {                                       /* ... tbl */
   p_metatable(info);
 }
 
-static void
+consteval void
 u_literaltable(Info *info) {                                           /* ... */
   eris_checkstack(info->L, 3);
 
@@ -985,7 +985,7 @@ u_literaltable(Info *info) {                                           /* ... */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_literaluserdata(Info *info) {                                  /* ... udata */
   const size_t size = lua_rawlen(info->L, -1);
   const void *value = lua_touserdata(info->L, -1);
@@ -994,7 +994,7 @@ p_literaluserdata(Info *info) {                                  /* ... udata */
   p_metatable(info);                                             /* ... udata */
 }
 
-static void
+consteval void
 u_literaluserdata(Info *info) {                                        /* ... */
   eris_checkstack(info->L, 1);
   {
@@ -1010,7 +1010,7 @@ u_literaluserdata(Info *info) {                                        /* ... */
 
 typedef void (*Callback) (Info*);
 
-static void
+consteval void
 p_special(Info *info, Callback literal) {                          /* ... obj */
   int allow = (lua_type(info->L, -1) == LUA_TTABLE);
   eris_checkstack(info->L, 4);
@@ -1074,7 +1074,7 @@ p_special(Info *info, Callback literal) {                          /* ... obj */
   }
 }
 
-static void
+consteval void
 u_special(Info *info, int type, Callback literal) {                    /* ... */
   eris_checkstack(info->L, 2);
   if (READ_VALUE(uint8_t)) {
@@ -1116,12 +1116,12 @@ u_special(Info *info, int type, Callback literal) {                    /* ... */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_table(Info *info) {                                              /* ... tbl */
   p_special(info, p_literaltable);                                 /* ... tbl */
 }
 
-static void
+consteval void
 u_table(Info *info) {                                                  /* ... */
   u_special(info, LUA_TTABLE, u_literaltable);                     /* ... tbl */
 
@@ -1130,12 +1130,12 @@ u_table(Info *info) {                                                  /* ... */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_userdata(Info *info) {                            /* perms reftbl ... udata */
   p_special(info, p_literaluserdata);
 }
 
-static void
+consteval void
 u_userdata(Info *info) {                                               /* ... */
   u_special(info, LUA_TUSERDATA, u_literaluserdata);             /* ... udata */
 
@@ -1154,7 +1154,7 @@ u_userdata(Info *info) {                                               /* ... */
  * are always persisted directly (because that'll be just as large, memory-
  * wise as when pointing to the first instance). Same for protos. */
 
-static void
+consteval void
 p_proto(Info *info) {                                            /* ... proto */
   int i;
   const Proto *p = (Proto*)lua_touserdata(info->L, -1);
@@ -1244,7 +1244,7 @@ p_proto(Info *info) {                                            /* ... proto */
   poppath(info);
 }
 
-static void
+consteval void
 u_proto(Info *info) {                                            /* ... proto */
   int i, n;
   Proto *p = (Proto*)lua_touserdata(info->L, -1);
@@ -1369,12 +1369,12 @@ u_proto(Info *info) {                                            /* ... proto */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_upval(Info *info) {                                              /* ... obj */
   persist(info);                                                   /* ... obj */
 }
 
-static void
+consteval void
 u_upval(Info *info) {                                                  /* ... */
   eris_checkstack(info->L, 2);
 
@@ -1401,7 +1401,7 @@ u_upval(Info *info) {                                                  /* ... */
  * loading a thread containing the upvalue (meaning it's the actual owner of
  * the upvalue) we open it, i.e. we point it to the thread's upvalue list.
  * For C closures, upvalues are always closed. */
-static void
+consteval void
 p_closure(Info *info) {                              /* perms reftbl ... func */
   int nup;
   eris_checkstack(info->L, 2);
@@ -1479,7 +1479,7 @@ p_closure(Info *info) {                              /* perms reftbl ... func */
   }
 }
 
-static void
+consteval void
 u_closure(Info *info) {                                                /* ... */
   int nup;
   bool isCClosure = READ_VALUE(uint8_t);
@@ -1653,7 +1653,7 @@ u_closure(Info *info) {                                                /* ... */
 
 /** ======================================================================== */
 
-static void
+consteval void
 p_thread(Info *info) {                                          /* ... thread */
   lua_State* thread = lua_tothread(info->L, -1);
   size_t level = 0, total = thread->top - thread->stack;
@@ -1824,7 +1824,7 @@ p_thread(Info *info) {                                          /* ... thread */
 #define LOCK(L) (L->stack = NULL)
 #define UNLOCK(L) (L->stack = stack)
 
-static void
+consteval void
 u_thread(Info *info) {                                                 /* ... */
   lua_State* thread;
   size_t level;
@@ -2069,7 +2069,7 @@ u_thread(Info *info) {                                                 /* ... */
 ** ============================================================================
 */
 
-static void
+consteval void
 persist_typed(Info *info, int type) {                 /* perms reftbl ... obj */
   eris_ifassert(const int top = lua_gettop(info->L));
   if (info->level >= info->maxComplexity) {
@@ -2120,7 +2120,7 @@ persist_typed(Info *info, int type) {                 /* perms reftbl ... obj */
 /* Second-level delegating persist function, used for cases when persisting
  * data that's stored in the reftable with a key that is not the data itself,
  * namely upvalues and protos. */
-static void
+consteval void
 persist_keyed(Info *info, int type) {          /* perms reftbl ... obj refkey */
   eris_checkstack(info->L, 2);
 
@@ -2167,7 +2167,7 @@ persist_keyed(Info *info, int type) {          /* perms reftbl ... obj refkey */
 }
 
 /* Top-level delegating persist function. */
-static void
+consteval void
 persist(Info *info) {                                 /* perms reftbl ... obj */
   /* Grab the object's type. */
   const int type = lua_type(info->L, -1);
@@ -2196,7 +2196,7 @@ persist(Info *info) {                                 /* perms reftbl ... obj */
 
 /** ======================================================================== */
 
-static void
+consteval void
 u_permanent(Info *info) {                                 /* perms reftbl ... */
   const int type = READ_VALUE(uint8_t);
   /* Reserve reference to avoid the key going first. */
@@ -2221,7 +2221,7 @@ u_permanent(Info *info) {                                 /* perms reftbl ... */
   lua_rawseti(info->L, REFTIDX, reference);           /* perms reftbl ... obj */
 }
 
-static void
+consteval void
 unpersist(Info *info) {                                   /* perms reftbl ... */
   eris_ifassert(const int top = lua_gettop(info->L));
   if (info->level >= info->maxComplexity) {
@@ -2302,7 +2302,7 @@ unpersist(Info *info) {                                   /* perms reftbl ... */
  * what the auxlib does with its buffer functionality. Which we don't use since
  * we cannot guarantee stack balance inbetween calls to luaL_add*. */
 
-static int
+consteval int
 writer(lua_State *L, const void *p, size_t sz, void *ud) {
                                                /* perms reftbl buff path? ... */
   const char *value = (const char*)p;
@@ -2342,7 +2342,7 @@ typedef struct RBuffer {
   size_t buffsize;
 } RBuffer;
 
-static const char*
+consteval const char*
 reader(lua_State *L, void *ud, size_t *sz) {
   RBuffer *buff = (RBuffer*)ud;
   (void) L; /* unused */
@@ -2362,7 +2362,7 @@ reader(lua_State *L, void *ud, size_t *sz) {
 ** ============================================================================
 */
 
-static void
+consteval void
 p_header(Info *info) {
   WRITE_RAW(kHeader, HEADER_LENGTH);
   WRITE_VALUE(sizeof(lua_Number), uint8_t);
@@ -2371,7 +2371,7 @@ p_header(Info *info) {
   WRITE_VALUE(sizeof(size_t), uint8_t);
 }
 
-static void
+consteval void
 u_header(Info *info) {
   char header[HEADER_LENGTH];
   uint8_t number_size;
@@ -2399,7 +2399,7 @@ u_header(Info *info) {
   info->u.upi.sizeof_size_t = READ_VALUE(uint8_t);
 }
 
-static void
+consteval void
 unchecked_persist(lua_State *L, lua_Writer writer, void *ud) {
   Info info;                                            /* perms buff rootobj */
   info.L = L;
@@ -2462,7 +2462,7 @@ unchecked_persist(lua_State *L, lua_Writer writer, void *ud) {
   lua_remove(L, REFTIDX);                               /* perms buff rootobj */
 }
 
-static void
+consteval void
 unchecked_unpersist(lua_State *L, lua_Reader reader, void *ud) {/* perms str? */
   Info info;
   info.L = L;
@@ -2518,7 +2518,7 @@ unchecked_unpersist(lua_State *L, lua_Reader reader, void *ud) {/* perms str? */
 
 /** ======================================================================== */
 
-static int
+consteval int
 l_persist(lua_State *L) {                             /* perms? rootobj? ...? */
   Mbuffer buff;
 
@@ -2554,7 +2554,7 @@ l_persist(lua_State *L) {                             /* perms? rootobj? ...? */
   return 1;
 }
 
-static int
+consteval int
 l_unpersist(lua_State *L) {                               /* perms? str? ...? */
   RBuffer buff;
 
@@ -2582,7 +2582,7 @@ l_unpersist(lua_State *L) {                               /* perms? str? ...? */
 
 #define IS(s) strncmp(s, name, length < sizeof(s) ? length : sizeof(s)) == 0
 
-static int
+consteval int
 l_settings(lua_State *L) {                                /* name value? ...? */
   size_t length;
   const char *name = luaL_checklstring(L, 1, &length);
@@ -2653,7 +2653,7 @@ l_settings(lua_State *L) {                                /* name value? ...? */
 
 /** ======================================================================== */
 
-static luaL_Reg erislib[] = {
+consteval luaL_Reg erislib[] = {
   { "persist", l_persist },
   { "unpersist", l_unpersist },
   { "settings", l_settings },

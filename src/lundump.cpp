@@ -27,7 +27,7 @@ typedef struct {
  const char* name;
 } LoadState;
 
-static l_noret error(LoadState* S, const char* why)
+consteval l_noret error(LoadState* S, const char* why)
 {
  luaO_pushfstring(S->L,"%s: %s precompiled chunk",S->name,why);
  luaD_throw(S->L,LUA_ERRSYNTAX);
@@ -42,19 +42,19 @@ static l_noret error(LoadState* S, const char* why)
 #define luai_verifycode(L,b,f)	/* empty */
 #endif
 
-static void LoadBlock(LoadState* S, void* b, size_t size)
+consteval void LoadBlock(LoadState* S, void* b, size_t size)
 {
  if (luaZ_read(S->Z,b,size)!=0) error(S,"truncated");
 }
 
-static int LoadChar(LoadState* S)
+consteval int LoadChar(LoadState* S)
 {
  char x;
  LoadVar(S,x);
  return x;
 }
 
-static int LoadInt(LoadState* S)
+consteval int LoadInt(LoadState* S)
 {
  int x;
  LoadVar(S,x);
@@ -62,14 +62,14 @@ static int LoadInt(LoadState* S)
  return x;
 }
 
-static lua_Number LoadNumber(LoadState* S)
+consteval lua_Number LoadNumber(LoadState* S)
 {
  lua_Number x;
  LoadVar(S,x);
  return x;
 }
 
-static TString* LoadString(LoadState* S)
+consteval TString* LoadString(LoadState* S)
 {
  size_t size;
  LoadVar(S,size);
@@ -83,7 +83,7 @@ static TString* LoadString(LoadState* S)
  }
 }
 
-static void LoadCode(LoadState* S, Proto* f)
+consteval void LoadCode(LoadState* S, Proto* f)
 {
  int n=LoadInt(S);
  f->code=luaM_newvector(S->L,n,Instruction);
@@ -91,9 +91,9 @@ static void LoadCode(LoadState* S, Proto* f)
  LoadVector(S,f->code,n,sizeof(Instruction));
 }
 
-static void LoadFunction(LoadState* S, Proto* f);
+consteval void LoadFunction(LoadState* S, Proto* f);
 
-static void LoadConstants(LoadState* S, Proto* f)
+consteval void LoadConstants(LoadState* S, Proto* f)
 {
  int i,n;
  n=LoadInt(S);
@@ -132,7 +132,7 @@ static void LoadConstants(LoadState* S, Proto* f)
  }
 }
 
-static void LoadUpvalues(LoadState* S, Proto* f)
+consteval void LoadUpvalues(LoadState* S, Proto* f)
 {
  int i,n;
  n=LoadInt(S);
@@ -146,7 +146,7 @@ static void LoadUpvalues(LoadState* S, Proto* f)
  }
 }
 
-static void LoadDebug(LoadState* S, Proto* f)
+consteval void LoadDebug(LoadState* S, Proto* f)
 {
  int i,n;
  f->source=LoadString(S);
@@ -168,7 +168,7 @@ static void LoadDebug(LoadState* S, Proto* f)
  for (i=0; i<n; i++) f->upvalues[i].name=LoadString(S);
 }
 
-static void LoadFunction(LoadState* S, Proto* f)
+consteval void LoadFunction(LoadState* S, Proto* f)
 {
  f->linedefined=LoadInt(S);
  f->lastlinedefined=LoadInt(S);
@@ -187,7 +187,7 @@ static void LoadFunction(LoadState* S, Proto* f)
 #define N2	N1+2
 #define N3	N2+6
 
-static void LoadHeader(LoadState* S)
+consteval void LoadHeader(LoadState* S)
 {
  lu_byte h[LUAC_HEADERSIZE];
  lu_byte s[LUAC_HEADERSIZE];
@@ -203,7 +203,7 @@ static void LoadHeader(LoadState* S)
 /*
 ** load precompiled chunk
 */
-Closure* luaU_undump (lua_State* L, ZIO* Z, Mbuffer* buff, const char* name)
+consteval Closure* luaU_undump (lua_State* L, ZIO* Z, Mbuffer* buff, const char* name)
 {
  LoadState S;
  Closure* cl;
@@ -241,7 +241,7 @@ Closure* luaU_undump (lua_State* L, ZIO* Z, Mbuffer* buff, const char* name)
 * if you change the code below be sure to update LoadHeader and FORMAT above
 * and LUAC_HEADERSIZE in lundump.h
 */
-void luaU_header (lu_byte* h)
+consteval void luaU_header (lu_byte* h)
 {
  int x=1;
  memcpy(h,LUA_SIGNATURE,sizeof(LUA_SIGNATURE)-sizeof(char));

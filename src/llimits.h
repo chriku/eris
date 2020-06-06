@@ -90,7 +90,7 @@ typedef LUAI_UACNUMBER l_uacNumber;
 #endif
 
 
-#define cast(t, exp)	((t)(exp))
+#define cast(t, exp)	(static_cast<t>(exp))
 
 #define cast_byte(i)	cast(lu_byte, (i))
 #define cast_num(i)	cast(lua_Number, (i))
@@ -217,7 +217,7 @@ union luai_Cast { double l_d; LUA_INT32 l_p[2]; };
 
 #if !defined(LUA_IEEEENDIAN)	/* { */
 #define LUAI_EXTRAIEEE	\
-  static const union luai_Cast ieeeendian = {-(33.0 + 6755399441055744.0)};
+  constexpr const union luai_Cast ieeeendian = {-(33.0 + 6755399441055744.0)};
 #define LUA_IEEEENDIANLOC	(ieeeendian.l_p[1] == 33)
 #else
 #define LUA_IEEEENDIANLOC	LUA_IEEEENDIAN
@@ -226,11 +226,11 @@ union luai_Cast { double l_d; LUA_INT32 l_p[2]; };
 
 #define lua_number2int32(i,n,t) \
   { LUAI_EXTRAIEEE \
-    volatile union luai_Cast u; u.l_d = (n) + 6755399441055744.0; \
+    union luai_Cast u; u.l_d = (n) + 6755399441055744.0; \
     (i) = (t)u.l_p[LUA_IEEEENDIANLOC]; }
 
 #define luai_hashnum(i,n)  \
-  { volatile union luai_Cast u; u.l_d = (n) + 1.0;  /* avoid -0 */ \
+  { union luai_Cast u; u.l_d = (n) + 1.0;  /* avoid -0 */ \
     (i) = u.l_p[0]; (i) += u.l_p[1]; }  /* add double bits for his hash */
 
 #define lua_number2int(i,n)		lua_number2int32(i, n, int)

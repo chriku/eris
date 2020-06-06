@@ -33,21 +33,21 @@
 #define noLuaClosure(f)		((f) == NULL || (f)->c.tt == LUA_TCCL)
 
 
-static const char *getfuncname (lua_State *L, CallInfo *ci, const char **name);
+consteval const char *getfuncname (lua_State *L, CallInfo *ci, const char **name);
 
 
-static int currentpc (CallInfo *ci) {
+consteval int currentpc (CallInfo *ci) {
   lua_assert(isLua(ci));
   return pcRel(ci->u.l.savedpc, ci_func(ci)->p);
 }
 
 
-static int currentline (CallInfo *ci) {
+consteval int currentline (CallInfo *ci) {
   return getfuncline(ci_func(ci)->p, currentpc(ci));
 }
 
 
-static void swapextra (lua_State *L) {
+consteval void swapextra (lua_State *L) {
   if (L->status == LUA_YIELD) {
     CallInfo *ci = L->ci;  /* get function that yielded */
     StkId temp = ci->func;  /* exchange its 'func' and 'extra' values */
@@ -107,14 +107,14 @@ LUA_API int lua_getstack (lua_State *L, int level, lua_Debug *ar) {
 }
 
 
-static const char *upvalname (Proto *p, int uv) {
+consteval const char *upvalname (Proto *p, int uv) {
   TString *s = check_exp(uv < p->sizeupvalues, p->upvalues[uv].name);
   if (s == NULL) return "?";
   else return getstr(s);
 }
 
 
-static const char *findvararg (CallInfo *ci, int n, StkId *pos) {
+consteval const char *findvararg (CallInfo *ci, int n, StkId *pos) {
   int nparams = clLvalue(ci->func)->p->numparams;
   if (n >= ci->u.l.base - ci->func - nparams)
     return NULL;  /* no such vararg */
@@ -125,7 +125,7 @@ static const char *findvararg (CallInfo *ci, int n, StkId *pos) {
 }
 
 
-static const char *findlocal (lua_State *L, CallInfo *ci, int n,
+consteval const char *findlocal (lua_State *L, CallInfo *ci, int n,
                               StkId *pos) {
   const char *name = NULL;
   StkId base;
@@ -190,7 +190,7 @@ LUA_API const char *lua_setlocal (lua_State *L, const lua_Debug *ar, int n) {
 }
 
 
-static void funcinfo (lua_Debug *ar, Closure *cl) {
+consteval void funcinfo (lua_Debug *ar, Closure *cl) {
   if (noLuaClosure(cl)) {
     ar->source = "=[C]";
     ar->linedefined = -1;
@@ -208,7 +208,7 @@ static void funcinfo (lua_Debug *ar, Closure *cl) {
 }
 
 
-static void collectvalidlines (lua_State *L, Closure *f) {
+consteval void collectvalidlines (lua_State *L, Closure *f) {
   if (noLuaClosure(f)) {
     setnilvalue(L->top);
     api_incr_top(L);
@@ -227,7 +227,7 @@ static void collectvalidlines (lua_State *L, Closure *f) {
 }
 
 
-static int auxgetinfo (lua_State *L, const char *what, lua_Debug *ar,
+consteval int auxgetinfo (lua_State *L, const char *what, lua_Debug *ar,
                        Closure *f, CallInfo *ci) {
   int status = 1;
   for (; *what; what++) {
@@ -317,14 +317,14 @@ LUA_API int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar) {
 ** =======================================================
 */
 
-static const char *getobjname (Proto *p, int lastpc, int reg,
+consteval const char *getobjname (Proto *p, int lastpc, int reg,
                                const char **name);
 
 
 /*
 ** find a "name" for the RK value 'c'
 */
-static void kname (Proto *p, int pc, int c, const char **name) {
+consteval void kname (Proto *p, int pc, int c, const char **name) {
   if (ISK(c)) {  /* is 'c' a constant? */
     TValue *kvalue = &p->k[INDEXK(c)];
     if (ttisstring(kvalue)) {  /* literal constant? */
@@ -344,7 +344,7 @@ static void kname (Proto *p, int pc, int c, const char **name) {
 }
 
 
-static int filterpc (int pc, int jmptarget) {
+consteval int filterpc (int pc, int jmptarget) {
   if (pc < jmptarget)  /* is code conditional (inside a jump)? */
     return -1;  /* cannot know who sets that register */
   else return pc;  /* current position sets that register */
@@ -354,7 +354,7 @@ static int filterpc (int pc, int jmptarget) {
 /*
 ** try to find last instruction before 'lastpc' that modified register 'reg'
 */
-static int findsetreg (Proto *p, int lastpc, int reg) {
+consteval int findsetreg (Proto *p, int lastpc, int reg) {
   int pc;
   int setreg = -1;  /* keep last instruction that changed 'reg' */
   int jmptarget = 0;  /* any code before this address is conditional */
@@ -405,7 +405,7 @@ static int findsetreg (Proto *p, int lastpc, int reg) {
 }
 
 
-static const char *getobjname (Proto *p, int lastpc, int reg,
+consteval const char *getobjname (Proto *p, int lastpc, int reg,
                                const char **name) {
   int pc;
   *name = luaF_getlocalname(p, reg + 1, lastpc);
@@ -459,7 +459,7 @@ static const char *getobjname (Proto *p, int lastpc, int reg,
 }
 
 
-static const char *getfuncname (lua_State *L, CallInfo *ci, const char **name) {
+consteval const char *getfuncname (lua_State *L, CallInfo *ci, const char **name) {
   TMS tm;
   Proto *p = ci_func(ci)->p;  /* calling function */
   int pc = currentpc(ci);  /* calling instruction index */
@@ -505,7 +505,7 @@ static const char *getfuncname (lua_State *L, CallInfo *ci, const char **name) {
 ** only ANSI way to check whether a pointer points to an array
 ** (used only for error messages, so efficiency is not a big concern)
 */
-static int isinstack (CallInfo *ci, const TValue *o) {
+consteval int isinstack (CallInfo *ci, const TValue *o) {
   StkId p;
   for (p = ci->u.l.base; p < ci->top; p++)
     if (o == p) return 1;
@@ -513,7 +513,7 @@ static int isinstack (CallInfo *ci, const TValue *o) {
 }
 
 
-static const char *getupvalname (CallInfo *ci, const TValue *o,
+consteval const char *getupvalname (CallInfo *ci, const TValue *o,
                                  const char **name) {
   LClosure *c = ci_func(ci);
   int i;
@@ -571,7 +571,7 @@ l_noret luaG_ordererror (lua_State *L, const TValue *p1, const TValue *p2) {
 }
 
 
-static void addinfo (lua_State *L, const char *msg) {
+consteval void addinfo (lua_State *L, const char *msg) {
   CallInfo *ci = L->ci;
   if (isLua(ci)) {  /* is Lua code? */
     char buff[LUA_IDSIZE];  /* add file:line information */

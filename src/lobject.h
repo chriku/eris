@@ -205,32 +205,32 @@ typedef struct lua_TValue TValue;
 #define setsvalue(L,obj,x) \
   { TValue *io=(obj); \
     TString *x_ = (x); \
-    val_(io).gc=cast(GCObject *, x_); settt_(io, ctb(x_->tsv.tt)); \
+    val_(io).gc=cast(GCObject *, cast(void*,x_)); settt_(io, ctb(x_->tsv.tt)); \
     checkliveness(G(L),io); }
 
 #define setuvalue(L,obj,x) \
   { TValue *io=(obj); \
-    val_(io).gc=cast(GCObject *, (x)); settt_(io, ctb(LUA_TUSERDATA)); \
+    val_(io).gc=cast(GCObject *, cast(void*,(x))); settt_(io, ctb(LUA_TUSERDATA)); \
     checkliveness(G(L),io); }
 
 #define setthvalue(L,obj,x) \
   { TValue *io=(obj); \
-    val_(io).gc=cast(GCObject *, (x)); settt_(io, ctb(LUA_TTHREAD)); \
+    val_(io).gc=cast(GCObject *, cast(void*,(x))); settt_(io, ctb(LUA_TTHREAD)); \
     checkliveness(G(L),io); }
 
 #define setclLvalue(L,obj,x) \
   { TValue *io=(obj); \
-    val_(io).gc=cast(GCObject *, (x)); settt_(io, ctb(LUA_TLCL)); \
+    val_(io).gc=cast(GCObject *, cast(void*,(x))); settt_(io, ctb(LUA_TLCL)); \
     checkliveness(G(L),io); }
 
 #define setclCvalue(L,obj,x) \
   { TValue *io=(obj); \
-    val_(io).gc=cast(GCObject *, (x)); settt_(io, ctb(LUA_TCCL)); \
+    val_(io).gc=cast(GCObject *, cast(void*,(x))); settt_(io, ctb(LUA_TCCL)); \
     checkliveness(G(L),io); }
 
 #define sethvalue(L,obj,x) \
   { TValue *io=(obj); \
-    val_(io).gc=cast(GCObject *, (x)); settt_(io, ctb(LUA_TTABLE)); \
+    val_(io).gc=cast(GCObject *, cast(void*,(x))); settt_(io, ctb(LUA_TTABLE)); \
     checkliveness(G(L),io); }
 
 #define setdeadvalue(obj)	settt_(obj, LUA_TDEADKEY)
@@ -419,7 +419,7 @@ typedef union TString {
 
 
 /* get the actual string (array of bytes) from a TString */
-#define getstr(ts)	cast(const char *, (ts) + 1)
+#define getstr(ts)	cast(const char *, cast(const void *, (ts) + 1))
 
 /* get the actual string (array of bytes) from a Lua value */
 #define svalue(o)       getstr(rawtsvalue(o))
@@ -588,7 +588,7 @@ typedef struct Table {
 #define luaO_nilobject		(&luaO_nilobject_)
 
 
-LUAI_DDEC const TValue luaO_nilobject_;
+constexpr TValue luaO_nilobject_ = {{gc: nullptr}, 0};
 
 
 LUAI_FUNC int luaO_int2fb (unsigned int x);

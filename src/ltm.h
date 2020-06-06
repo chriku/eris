@@ -46,7 +46,14 @@ typedef enum {
 #define ttypename(x)	luaT_typenames_[(x) + 1]
 #define objtypename(x)	ttypename(ttypenv(x))
 
-LUAI_DDEC const char *const luaT_typenames_[LUA_TOTALTAGS];
+constexpr const char udatatypename[] = "userdata";
+
+constexpr const char *const luaT_typenames_[LUA_TOTALTAGS] = {
+  "no value",
+  "nil", "boolean", udatatypename, "number",
+  "string", "table", "function", udatatypename, "thread",
+  "proto", "upval"  /* these last two cases are used for tests only */
+};
 
 
 LUAI_FUNC const TValue *luaT_gettm (Table *events, TMS event, TString *ename);

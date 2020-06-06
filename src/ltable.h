@@ -19,7 +19,7 @@
 
 /* returns the key, given the value of a table entry */
 #define keyfromval(v) \
-  (gkey(cast(Node *, cast(char *, (v)) - offsetof(Node, i_val))))
+  (gkey(cast(Node *, cast(void*,cast(char *, cast(void*,(v))) - offsetof(Node, i_val)))))
 
 
 LUAI_FUNC const TValue *luaH_getint (Table *t, int key);

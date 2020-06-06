@@ -26,7 +26,7 @@ typedef struct {
 #define DumpMem(b,n,size,D)	DumpBlock(b,(n)*(size),D)
 #define DumpVar(x,D)		DumpMem(&x,1,sizeof(x),D)
 
-static void DumpBlock(const void* b, size_t size, DumpState* D)
+consteval void DumpBlock(const void* b, size_t size, DumpState* D)
 {
  if (D->status==0)
  {
@@ -36,29 +36,29 @@ static void DumpBlock(const void* b, size_t size, DumpState* D)
  }
 }
 
-static void DumpChar(int y, DumpState* D)
+consteval void DumpChar(int y, DumpState* D)
 {
  char x=(char)y;
  DumpVar(x,D);
 }
 
-static void DumpInt(int x, DumpState* D)
+consteval void DumpInt(int x, DumpState* D)
 {
  DumpVar(x,D);
 }
 
-static void DumpNumber(lua_Number x, DumpState* D)
+consteval void DumpNumber(lua_Number x, DumpState* D)
 {
  DumpVar(x,D);
 }
 
-static void DumpVector(const void* b, int n, size_t size, DumpState* D)
+consteval void DumpVector(const void* b, int n, size_t size, DumpState* D)
 {
  DumpInt(n,D);
  DumpMem(b,n,size,D);
 }
 
-static void DumpString(const TString* s, DumpState* D)
+consteval void DumpString(const TString* s, DumpState* D)
 {
  if (s==NULL)
  {
@@ -75,9 +75,9 @@ static void DumpString(const TString* s, DumpState* D)
 
 #define DumpCode(f,D)	 DumpVector(f->code,f->sizecode,sizeof(Instruction),D)
 
-static void DumpFunction(const Proto* f, DumpState* D);
+consteval void DumpFunction(const Proto* f, DumpState* D);
 
-static void DumpConstants(const Proto* f, DumpState* D)
+consteval void DumpConstants(const Proto* f, DumpState* D)
 {
  int i,n=f->sizek;
  DumpInt(n,D);
@@ -106,7 +106,7 @@ static void DumpConstants(const Proto* f, DumpState* D)
  for (i=0; i<n; i++) DumpFunction(f->p[i],D);
 }
 
-static void DumpUpvalues(const Proto* f, DumpState* D)
+consteval void DumpUpvalues(const Proto* f, DumpState* D)
 {
  int i,n=f->sizeupvalues;
  DumpInt(n,D);
@@ -117,7 +117,7 @@ static void DumpUpvalues(const Proto* f, DumpState* D)
  }
 }
 
-static void DumpDebug(const Proto* f, DumpState* D)
+consteval void DumpDebug(const Proto* f, DumpState* D)
 {
  int i,n;
  DumpString((D->strip) ? NULL : f->source,D);
@@ -136,7 +136,7 @@ static void DumpDebug(const Proto* f, DumpState* D)
  for (i=0; i<n; i++) DumpString(f->upvalues[i].name,D);
 }
 
-static void DumpFunction(const Proto* f, DumpState* D)
+consteval void DumpFunction(const Proto* f, DumpState* D)
 {
  DumpInt(f->linedefined,D);
  DumpInt(f->lastlinedefined,D);
@@ -149,7 +149,7 @@ static void DumpFunction(const Proto* f, DumpState* D)
  DumpDebug(f,D);
 }
 
-static void DumpHeader(DumpState* D)
+consteval void DumpHeader(DumpState* D)
 {
  lu_byte h[LUAC_HEADERSIZE];
  luaU_header(h);
@@ -159,7 +159,7 @@ static void DumpHeader(DumpState* D)
 /*
 ** dump Lua function as precompiled chunk
 */
-int luaU_dump (lua_State* L, const Proto* f, lua_Writer w, void* data, int strip)
+consteval int luaU_dump (lua_State* L, const Proto* f, lua_Writer w, void* data, int strip)
 {
  DumpState D;
  D.L=L;

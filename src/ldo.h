@@ -19,8 +19,8 @@
 
 #define incr_top(L) {L->top++; luaD_checkstack(L,0);}
 
-#define savestack(L,p)		((char *)(p) - (char *)L->stack)
-#define restorestack(L,n)	((TValue *)((char *)L->stack + (n)))
+#define savestack(L,p)		(static_cast<char *>(static_cast<void*>(p)) - static_cast<char *>(static_cast<void*>(L->stack)))
+#define restorestack(L,n)	(static_cast<TValue *>(static_cast<void*>(static_cast<char*>(static_cast<void*>(L->stack)) + (n))))
 
 
 /* type of protected functions, to be ran by `runprotected' */

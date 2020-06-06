@@ -17,7 +17,7 @@
 #include "lualib.h"
 
 
-static int auxresume (lua_State *L, lua_State *co, int narg) {
+consteval int auxresume (lua_State *L, lua_State *co, int narg) {
   int status;
   if (!lua_checkstack(co, narg)) {
     lua_pushliteral(L, "too many arguments to resume");
@@ -46,7 +46,7 @@ static int auxresume (lua_State *L, lua_State *co, int narg) {
 }
 
 
-static int luaB_coresume (lua_State *L) {
+consteval int luaB_coresume (lua_State *L) {
   lua_State *co = lua_tothread(L, 1);
   int r;
   luaL_argcheck(L, co, 1, "coroutine expected");
@@ -64,7 +64,7 @@ static int luaB_coresume (lua_State *L) {
 }
 
 
-static int luaB_auxwrap (lua_State *L) {
+consteval int luaB_auxwrap (lua_State *L) {
   lua_State *co = lua_tothread(L, lua_upvalueindex(1));
   int r = auxresume(L, co, lua_gettop(L));
   if (r < 0) {
@@ -79,7 +79,7 @@ static int luaB_auxwrap (lua_State *L) {
 }
 
 
-static int luaB_cocreate (lua_State *L) {
+consteval int luaB_cocreate (lua_State *L) {
   lua_State *NL;
   luaL_checktype(L, 1, LUA_TFUNCTION);
   NL = lua_newthread(L);
@@ -89,19 +89,19 @@ static int luaB_cocreate (lua_State *L) {
 }
 
 
-static int luaB_cowrap (lua_State *L) {
+consteval int luaB_cowrap (lua_State *L) {
   luaB_cocreate(L);
   lua_pushcclosure(L, luaB_auxwrap, 1);
   return 1;
 }
 
 
-static int luaB_yield (lua_State *L) {
+consteval int luaB_yield (lua_State *L) {
   return lua_yield(L, lua_gettop(L));
 }
 
 
-static int luaB_costatus (lua_State *L) {
+consteval int luaB_costatus (lua_State *L) {
   lua_State *co = lua_tothread(L, 1);
   luaL_argcheck(L, co, 1, "coroutine expected");
   if (L == co) lua_pushliteral(L, "running");
@@ -129,14 +129,14 @@ static int luaB_costatus (lua_State *L) {
 }
 
 
-static int luaB_corunning (lua_State *L) {
+consteval int luaB_corunning (lua_State *L) {
   int ismain = lua_pushthread(L);
   lua_pushboolean(L, ismain);
   return 2;
 }
 
 
-static const luaL_Reg co_funcs[] = {
+/*constexpr const luaL_Reg co_funcs[] = {
   {"create", luaB_cocreate},
   {"resume", luaB_coresume},
   {"running", luaB_corunning},
@@ -144,17 +144,17 @@ static const luaL_Reg co_funcs[] = {
   {"wrap", luaB_cowrap},
   {"yield", luaB_yield},
   {NULL, NULL}
-};
+};*/
 
 
 
-LUAMOD_API int luaopen_coroutine (lua_State *L) {
-  luaL_newlib(L, co_funcs);
-  return 1;
+consteval int luaopen_coroutine (lua_State *L) {
+  //luaL_newlib(L, co_funcs);
+  return 0;
 }
 
 
-void eris_permcorolib(lua_State *L, int forUnpersist) {
+consteval void eris_permcorolib(lua_State *L, int forUnpersist) {
   luaL_checktype(L, -1, LUA_TTABLE);
   luaL_checkstack(L, 2, NULL);
 

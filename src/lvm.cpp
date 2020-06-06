@@ -32,7 +32,7 @@
 #define MAXTAGLOOP	100
 
 
-const TValue *luaV_tonumber (const TValue *obj, TValue *n) {
+consteval const TValue *luaV_tonumber (const TValue *obj, TValue *n) {
   lua_Number num;
   if (ttisnumber(obj)) return obj;
   if (ttisstring(obj) && luaO_str2d(svalue(obj), tsvalue(obj)->len, &num)) {
@@ -44,7 +44,7 @@ const TValue *luaV_tonumber (const TValue *obj, TValue *n) {
 }
 
 
-int luaV_tostring (lua_State *L, StkId obj) {
+consteval int luaV_tostring (lua_State *L, StkId obj) {
   if (!ttisnumber(obj))
     return 0;
   else {
@@ -57,7 +57,7 @@ int luaV_tostring (lua_State *L, StkId obj) {
 }
 
 
-static void traceexec (lua_State *L) {
+consteval void traceexec (lua_State *L) {
   CallInfo *ci = L->ci;
   lu_byte mask = L->hookmask;
   int counthook = ((mask & LUA_MASKCOUNT) && L->hookcount == 0);
@@ -90,7 +90,7 @@ static void traceexec (lua_State *L) {
 }
 
 
-static void callTM (lua_State *L, const TValue *f, const TValue *p1,
+consteval void callTM (lua_State *L, const TValue *f, const TValue *p1,
                     const TValue *p2, TValue *p3, int hasres) {
   ptrdiff_t result = savestack(L, p3);
   setobj2s(L, L->top++, f);  /* push function */
@@ -107,7 +107,7 @@ static void callTM (lua_State *L, const TValue *f, const TValue *p1,
 }
 
 
-void luaV_gettable (lua_State *L, const TValue *t, TValue *key, StkId val) {
+consteval void luaV_gettable (lua_State *L, const TValue *t, TValue *key, StkId val) {
   int loop;
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
     const TValue *tm;
@@ -133,13 +133,13 @@ void luaV_gettable (lua_State *L, const TValue *t, TValue *key, StkId val) {
 }
 
 
-void luaV_settable (lua_State *L, const TValue *t, TValue *key, StkId val) {
+consteval void luaV_settable (lua_State *L, const TValue *t, TValue *key, StkId val) {
   int loop;
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
     const TValue *tm;
     if (ttistable(t)) {  /* `t' is a table? */
       Table *h = hvalue(t);
-      TValue *oldval = cast(TValue *, luaH_get(h, key));
+      TValue *oldval = cast(TValue *, const_cast<TValue*>(luaH_get(h, key)));
       /* if previous value is not nil, there must be a previous entry
          in the table; moreover, a metamethod has no relevance */
       if (!ttisnil(oldval) ||
@@ -172,7 +172,7 @@ void luaV_settable (lua_State *L, const TValue *t, TValue *key, StkId val) {
 }
 
 
-static int call_binTM (lua_State *L, const TValue *p1, const TValue *p2,
+consteval int call_binTM (lua_State *L, const TValue *p1, const TValue *p2,
                        StkId res, TMS event) {
   const TValue *tm = luaT_gettmbyobj(L, p1, event);  /* try first operand */
   if (ttisnil(tm))
@@ -183,7 +183,7 @@ static int call_binTM (lua_State *L, const TValue *p1, const TValue *p2,
 }
 
 
-static const TValue *get_equalTM (lua_State *L, Table *mt1, Table *mt2,
+consteval const TValue *get_equalTM (lua_State *L, Table *mt1, Table *mt2,
                                   TMS event) {
   const TValue *tm1 = fasttm(L, mt1, event);
   const TValue *tm2;
@@ -197,7 +197,7 @@ static const TValue *get_equalTM (lua_State *L, Table *mt1, Table *mt2,
 }
 
 
-static int call_orderTM (lua_State *L, const TValue *p1, const TValue *p2,
+consteval int call_orderTM (lua_State *L, const TValue *p1, const TValue *p2,
                          TMS event) {
   if (!call_binTM(L, p1, p2, L->top, event))
     return -1;  /* no metamethod */
@@ -206,7 +206,7 @@ static int call_orderTM (lua_State *L, const TValue *p1, const TValue *p2,
 }
 
 
-static int l_strcmp (const TString *ls, const TString *rs) {
+consteval int l_strcmp (const TString *ls, const TString *rs) {
   const char *l = getstr(ls);
   size_t ll = ls->tsv.len;
   const char *r = getstr(rs);
@@ -228,7 +228,7 @@ static int l_strcmp (const TString *ls, const TString *rs) {
 }
 
 
-int luaV_lessthan (lua_State *L, const TValue *l, const TValue *r) {
+consteval int luaV_lessthan (lua_State *L, const TValue *l, const TValue *r) {
   int res;
   if (ttisnumber(l) && ttisnumber(r))
     return luai_numlt(L, nvalue(l), nvalue(r));
@@ -240,7 +240,7 @@ int luaV_lessthan (lua_State *L, const TValue *l, const TValue *r) {
 }
 
 
-int luaV_lessequal (lua_State *L, const TValue *l, const TValue *r) {
+consteval int luaV_lessequal (lua_State *L, const TValue *l, const TValue *r) {
   int res;
   if (ttisnumber(l) && ttisnumber(r))
     return luai_numle(L, nvalue(l), nvalue(r));
@@ -257,7 +257,7 @@ int luaV_lessequal (lua_State *L, const TValue *l, const TValue *r) {
 /*
 ** equality of Lua values. L == NULL means raw equality (no metamethods)
 */
-int luaV_equalobj_ (lua_State *L, const TValue *t1, const TValue *t2) {
+consteval int luaV_equalobj_ (lua_State *L, const TValue *t1, const TValue *t2) {
   const TValue *tm;
   lua_assert(ttisequal(t1, t2));
   switch (ttype(t1)) {
@@ -290,7 +290,7 @@ int luaV_equalobj_ (lua_State *L, const TValue *t1, const TValue *t2) {
 }
 
 
-void luaV_concat (lua_State *L, int total) {
+consteval void luaV_concat (lua_State *L, int total) {
   lua_assert(total >= 2);
   do {
     StkId top = L->top;
@@ -332,7 +332,7 @@ void luaV_concat (lua_State *L, int total) {
 }
 
 
-void luaV_objlen (lua_State *L, StkId ra, const TValue *rb) {
+consteval void luaV_objlen (lua_State *L, StkId ra, const TValue *rb) {
   const TValue *tm;
   switch (ttypenv(rb)) {
     case LUA_TTABLE: {
@@ -357,7 +357,7 @@ void luaV_objlen (lua_State *L, StkId ra, const TValue *rb) {
 }
 
 
-void luaV_arith (lua_State *L, StkId ra, const TValue *rb,
+consteval void luaV_arith (lua_State *L, StkId ra, const TValue *rb,
                  const TValue *rc, TMS op) {
   TValue tempb, tempc;
   const TValue *b, *c;
@@ -376,7 +376,7 @@ void luaV_arith (lua_State *L, StkId ra, const TValue *rb,
 ** whether there is a cached closure with the same upvalues needed by
 ** new closure to be created.
 */
-static Closure *getcached (Proto *p, UpVal **encup, StkId base) {
+consteval Closure *getcached (Proto *p, UpVal **encup, StkId base) {
   Closure *c = p->cache;
   if (c != NULL) {  /* is there a cached closure? */
     int nup = p->sizeupvalues;
@@ -398,7 +398,7 @@ static Closure *getcached (Proto *p, UpVal **encup, StkId base) {
 ** before the assignment to 'p->cache', as the function needs the
 ** original value of that field.
 */
-static void pushclosure (lua_State *L, Proto *p, UpVal **encup, StkId base,
+consteval void pushclosure (lua_State *L, Proto *p, UpVal **encup, StkId base,
                          StkId ra) {
   int nup = p->sizeupvalues;
   Upvaldesc *uv = p->upvalues;
@@ -420,7 +420,7 @@ static void pushclosure (lua_State *L, Proto *p, UpVal **encup, StkId base,
 /*
 ** finish execution of an opcode interrupted by an yield
 */
-void luaV_finishOp (lua_State *L) {
+consteval void luaV_finishOp (lua_State *L) {
   CallInfo *ci = L->ci;
   StkId base = ci->u.l.base;
   Instruction inst = *(ci->u.l.savedpc - 1);  /* interrupted instruction */
@@ -531,7 +531,7 @@ void luaV_finishOp (lua_State *L) {
 #define vmcase(l,b)	case l: {b}  break;
 #define vmcasenb(l,b)	case l: {b}		/* nb = no break */
 
-void luaV_execute (lua_State *L) {
+consteval void luaV_execute (lua_State *L) {
   CallInfo *ci = L->ci;
   LClosure *cl;
   TValue *k;
@@ -717,7 +717,8 @@ void luaV_execute (lua_State *L) {
         else {  /* Lua function */
           ci = L->ci;
           ci->callstatus |= CIST_REENTRY;
-          goto newframe;  /* restart luaV_execute over new Lua function */
+          //goto newframe;  /* restart luaV_execute over new Lua function */
+          //TODO!!!!!!!
         }
       )
       vmcase(OP_TAILCALL,
@@ -746,7 +747,8 @@ void luaV_execute (lua_State *L) {
           oci->callstatus |= CIST_TAIL;  /* function was tail called */
           ci = L->ci = oci;  /* remove new frame */
           lua_assert(L->top == oci->u.l.base + getproto(ofunc)->maxstacksize);
-          goto newframe;  /* restart luaV_execute over new Lua function */
+          //goto newframe;  /* restart luaV_execute over new Lua function */
+//TODO!!!!
         }
       )
       vmcasenb(OP_RETURN,
@@ -761,7 +763,8 @@ void luaV_execute (lua_State *L) {
           if (b) L->top = ci->top;
           lua_assert(isLua(ci));
           lua_assert(GET_OPCODE(*((ci)->u.l.savedpc - 1)) == OP_CALL);
-          goto newframe;  /* restart luaV_execute over new Lua function */
+          //goto newframe;  /* restart luaV_execute over new Lua function */
+//TODO!!!!
         }
       )
       vmcase(OP_FORLOOP,
@@ -799,7 +802,8 @@ void luaV_execute (lua_State *L) {
         i = *(ci->u.l.savedpc++);  /* go to next instruction */
         ra = RA(i);
         lua_assert(GET_OPCODE(i) == OP_TFORLOOP);
-        goto l_tforloop;
+        //goto l_tforloop;
+//TODO!!!!
       )
       vmcase(OP_TFORLOOP,
         l_tforloop:
